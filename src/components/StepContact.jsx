@@ -10,7 +10,7 @@ export default function StepContact({ contact, setContact, errors }) {
           Who are we bidding?
         </h2>
         <p className="text-sm text-navy-500">
-          Start with the prospect's contact details.
+          Start with the prospect's contact details and site address.
         </p>
       </header>
 
@@ -30,6 +30,19 @@ export default function StepContact({ contact, setContact, errors }) {
             onChange={update('contact_name')}
             placeholder="Jane Smith"
             autoComplete="name"
+          />
+        </Field>
+
+        <Field
+          label="Site address"
+          hint="Where the cleaning happens"
+          error={errors?.site_address}
+        >
+          <TextInput
+            value={contact.site_address}
+            onChange={update('site_address')}
+            placeholder="1234 Main St, Tacoma WA 98404"
+            autoComplete="street-address"
           />
         </Field>
 

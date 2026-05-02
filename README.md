@@ -1,15 +1,19 @@
-# Premier Janitorial Bid Calculator
+# Premier Janitorial Service Agreement Builder
 
-A mobile-first React app for generating commercial cleaning bids on the spot. Built for `bid.premierjanservices.com`.
+A mobile-first React app that captures a walkthrough on a phone and produces a complete, ready-to-sign Service Agreement. Built for `bid.premierjanservices.com`.
+
+> **v2.0** — output is now a full Service Agreement (the bid + the legal contract combined). See [`CHANGELOG_V2.md`](./CHANGELOG_V2.md) for what changed from v1.
+>
+> **Deploying for the first time?** See [`DEPLOYMENT.md`](./DEPLOYMENT.md).
 
 ---
 
 ## Quick reference
 
-- **Edit pricing:** `src/config/pricing.js` (only file you ever need to touch)
+- **Edit pricing or legal boilerplate:** `src/config/pricing.js` (only file you ever need to touch)
 - **Local dev:** `npm install && npm run dev`
 - **Deploy:** push to GitHub — Netlify auto-builds and ships
-- **Live URL (after setup):** `https://bid.premierjanservices.com`
+- **Live URL:** `https://bid.premierjanservices.com`
 
 ---
 

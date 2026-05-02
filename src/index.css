@@ -41,14 +41,59 @@ input[type=number] {
   -moz-appearance: textfield;
 }
 
-/* Print styles for "Save as PDF" */
+/* ============================================================================
+   Print styles — Service Agreement PDF
+   ============================================================================
+   The agreement is one continuous document. Use page breaks judiciously to
+   keep section headings with their content and the signature block intact.
+   ============================================================================ */
 @media print {
+  @page {
+    size: letter;
+    margin: 0.6in 0.7in;
+  }
+
   body::before { display: none; }
   body { background: #fff; }
   .no-print { display: none !important; }
+
+  /* The agreement card itself: strip browser chrome but keep the typography. */
   .print-area {
     box-shadow: none !important;
     border: none !important;
+    padding: 0 !important;
+    border-radius: 0 !important;
+    max-width: none !important;
+  }
+
+  /* Avoid orphaning section titles from their content. */
+  .agreement-section {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* Scope-of-work area blocks each stay together where possible. */
+  .scope-block {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* Force a page break before the signature block so signers always get a
+     clean page-bottom feel rather than a mid-page break. */
+  .page-break-before {
+    break-before: page;
+    page-break-before: always;
+  }
+
+  /* Tighten body text slightly for print. */
+  .agreement {
+    font-size: 11pt;
+    line-height: 1.45;
+  }
+
+  h1, h2, h3 {
+    break-after: avoid;
+    page-break-after: avoid;
   }
 }
 

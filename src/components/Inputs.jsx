@@ -55,6 +55,72 @@ export function NumberInput({ value, onChange, placeholder = '0', suffix }) {
   )
 }
 
+export function DateInput({ value, onChange }) {
+  return (
+    <input
+      type="date"
+      value={value ?? ''}
+      onChange={(e) => onChange(e.target.value)}
+      className="w-full px-4 py-3 bg-white border border-navy-200 rounded-lg
+                 text-ink placeholder:text-navy-300
+                 focus:outline-none focus:border-ink focus:ring-2 focus:ring-ink/10
+                 transition-colors text-base"
+    />
+  )
+}
+
+export function TextArea({ value, onChange, placeholder, rows = 5 }) {
+  return (
+    <textarea
+      rows={rows}
+      value={value ?? ''}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={placeholder}
+      className="w-full px-4 py-3 bg-white border border-navy-200 rounded-lg
+                 text-ink placeholder:text-navy-300 resize-y
+                 focus:outline-none focus:border-ink focus:ring-2 focus:ring-ink/10
+                 transition-colors text-base leading-relaxed"
+    />
+  )
+}
+
+export function CheckCard({ checked, onChange, label, children }) {
+  return (
+    <div
+      className={`border rounded-lg transition-all ${
+        checked ? 'border-ink bg-ink/[0.02] shadow-card' : 'border-navy-200 bg-white hover:border-navy-400'
+      }`}
+    >
+      <label className="flex items-center gap-3 px-4 py-3.5 cursor-pointer">
+        <span
+          className={`flex-shrink-0 w-5 h-5 rounded border-[1.5px] flex items-center justify-center transition-colors ${
+            checked ? 'bg-ink border-ink' : 'bg-white border-navy-300'
+          }`}
+          aria-hidden="true"
+        >
+          {checked && (
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <path d="M2.5 6L5 8.5L9.5 4" stroke="white" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          )}
+        </span>
+        <input
+          type="checkbox"
+          checked={!!checked}
+          onChange={(e) => onChange(e.target.checked)}
+          className="sr-only"
+        />
+        <span className="text-[15px] font-medium text-ink">{label}</span>
+      </label>
+      {checked && children && (
+        <div className="px-4 pb-4 pl-12 -mt-1">
+          {children}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export function ChoiceCard({ selected, onClick, label, blurb, suffix }) {
   return (
     <button

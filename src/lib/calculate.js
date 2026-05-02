@@ -9,13 +9,27 @@ import {
   CONDITIONS,
   FREQUENCIES,
   FACILITY_TYPES,
+  FACILITY_AREAS,
 } from '../config/pricing.js'
 
 /**
  * Compute the full bid from form inputs.
  * Returns the JSON object that will (in v2) be POSTed to GHL.
+ *
+ * Shape (v2):
+ *   {
+ *     contact:      { business_name, contact_name, contact_email, contact_phone, site_address }
+ *     agreement:    { agreement_date, service_start_date, service_days_hours }
+ *     facility:     { facility_type, sqft_carpet, sqft_hard_floor, restrooms, trash_bins, recycle_bins,
+ *                     condition, frequency }
+ *     areas:        { lobby: { selected, quantity }, ... }
+ *     custom_notes: string
+ *     calculation:  { ...pricing breakdown }
+ *     scope_blocks: [{ id, label, quantity, tasks: [{ freq, text }] }]
+ *     meta:         { generated_at, version }
+ *   }
  */
-export function computeBid({ contact, facility }) {
+export function computeBid({ contact, agreement, facility, areas, custom_notes }) {
   const productionRate = PRODUCTION_RATES[facility.facility_type] ?? PRODUCTION_RATES.mixed_office
   const conditionDef = CONDITIONS.find(c => c.id === facility.condition) ?? CONDITIONS[1]
   const frequencyDef = FREQUENCIES.find(f => f.id === facility.frequency) ?? FREQUENCIES[2]
@@ -39,9 +53,11 @@ export function computeBid({ contact, facility }) {
 
   return {
     contact: { ...contact },
+    agreement: { ...agreement },
     facility: { ...facility },
+    areas: { ...areas },
+    custom_notes: (custom_notes || '').trim(),
     calculation: {
-      // Detailed breakdown so v2 can render it in proposals if desired
       production_rate_used: productionRate,
       hard_floor_rate_used: HARD_FLOOR_RATE,
       condition_multiplier: conditionDef.multiplier,
@@ -59,53 +75,29 @@ export function computeBid({ contact, facility }) {
       monthly_bid: round(monthlyBid, 2),
       billable_rate: PRICING.billableRate,
     },
-    scope_of_work: buildScope(facility, frequencyDef),
-    exclusions: buildExclusions(),
+    scope_blocks: buildScopeBlocks(areas),
     meta: {
       generated_at: new Date().toISOString(),
-      version: '1.0.0',
+      version: '2.0.0',
     },
   }
 }
 
-function buildScope(facility, frequencyDef) {
-  const scope = []
-  if ((facility.sqft_carpet || 0) > 0) {
-    scope.push('Vacuum all carpeted areas')
-  }
-  if ((facility.sqft_hard_floor || 0) > 0) {
-    scope.push('Sweep and mop all hard floor surfaces')
-  }
-  if ((facility.trash_bins || 0) > 0) {
-    scope.push('Empty all waste receptacles and replace liners')
-  }
-  if ((facility.recycle_bins || 0) > 0) {
-    scope.push('Empty and consolidate recycling per facility protocol')
-  }
-  if ((facility.restrooms || 0) > 0) {
-    scope.push(
-      'Clean and sanitize restrooms: toilets, sinks, mirrors, partitions; restock paper goods and soap; mop floors',
-    )
-  }
-  // Always-included items
-  scope.push('Dust horizontal surfaces below 6 feet')
-  scope.push('Spot-clean glass doors and entry surfaces')
-  scope.push('Empty and wipe down all desks left clear at end of day')
-  // Schedule footer
-  const freqLabel = frequencyDef.id === '7x_week' ? 'daily' : `${frequencyDef.perWeek} times per week`
-  scope.push(`All services performed ${freqLabel} as per agreed schedule`)
-  return scope
-}
-
-function buildExclusions() {
-  return [
-    'Window cleaning (interior or exterior)',
-    'Carpet shampooing or extraction',
-    'Hard floor strip and wax',
-    'Specialty disinfection or fogging service',
-    'Pressure washing (exterior)',
-    'High dusting (above 6 feet)',
-  ]
+/**
+ * Build the conditional Scope of Work blocks. Only includes areas the user
+ * has checked. Quantity-bearing areas (restrooms, conference rooms) attach
+ * the count so the agreement can show "RESTROOMS (4)".
+ */
+function buildScopeBlocks(areas) {
+  if (!areas) return []
+  return FACILITY_AREAS
+    .filter(area => areas[area.id]?.selected)
+    .map(area => ({
+      id: area.id,
+      label: area.label,
+      quantity: area.needsQuantity ? Number(areas[area.id]?.quantity) || null : null,
+      tasks: area.tasks,
+    }))
 }
 
 function round(n, places = 2) {
@@ -138,4 +130,36 @@ export function formatNumber(n, decimals = 2) {
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals,
   })
+}
+
+/**
+ * Format an ISO date (YYYY-MM-DD) as "January 5, 2026". Returns a
+ * placeholder string if input is empty/invalid.
+ */
+export function formatLongDate(iso) {
+  if (!iso) return '__________________'
+  const [y, m, d] = iso.split('-').map(Number)
+  if (!y || !m || !d) return iso
+  return new Date(y, m - 1, d).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  })
+}
+
+/** YYYY-MM-DD for today (local time). */
+export function todayISO() {
+  const d = new Date()
+  const yyyy = d.getFullYear()
+  const mm = String(d.getMonth() + 1).padStart(2, '0')
+  const dd = String(d.getDate()).padStart(2, '0')
+  return `${yyyy}-${mm}-${dd}`
+}
+
+/** Build the recommended filename: PJS_ServiceAgreement_LastName_YYYYMMDD */
+export function buildFilename({ contact, agreement }) {
+  const lastName = (contact?.contact_name || 'Client').trim().split(/\s+/).pop() || 'Client'
+  const cleanLast = lastName.replace(/[^A-Za-z0-9-]/g, '')
+  const dateStr = (agreement?.agreement_date || todayISO()).replace(/-/g, '')
+  return `PJS_ServiceAgreement_${cleanLast}_${dateStr}`
 }
